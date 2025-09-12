@@ -162,7 +162,3 @@
 #             ;;
 #     esac
 # done
-
-
-
-echo "My IP is : $ifconfig"
