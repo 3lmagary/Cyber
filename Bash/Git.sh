@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Root directory to start scanning (change if needed)
 BASE_DIR="/mnt/MyProject"
 
-# Colors
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
@@ -17,8 +15,7 @@ count=0
 modified=0
 ahead=0
 
-# Find all directories containing .git
-find "$BASE_DIR" -type d -name ".git" 2>/dev/null | while read gitdir; do
+while read gitdir; do
     repo=$(dirname "$gitdir")
     cd "$repo" || continue
     ((count++))
@@ -27,7 +24,6 @@ find "$BASE_DIR" -type d -name ".git" 2>/dev/null | while read gitdir; do
     branch=$(git branch --show-current 2>/dev/null)
     status=$(git status --porcelain)
 
-    # Check for uncommitted or unstaged changes
     if [ -n "$status" ]; then
         ((modified++))
         echo -e "${YELLOW}📁 $repo_name${RESET} ($repo)"
@@ -35,7 +31,6 @@ find "$BASE_DIR" -type d -name ".git" 2>/dev/null | while read gitdir; do
         git status -s
         echo "------------------------------------------------------------"
     else
-        # Check for commits not pushed or remote changes
         git fetch --quiet 2>/dev/null
         local_commit=$(git rev-parse @ 2>/dev/null)
         remote_commit=$(git rev-parse "@{u}" 2>/dev/null)
@@ -49,7 +44,7 @@ find "$BASE_DIR" -type d -name ".git" 2>/dev/null | while read gitdir; do
             echo "------------------------------------------------------------"
         fi
     fi
-done
+done < <(find "$BASE_DIR" -type d -name ".git" 2>/dev/null)
 
 echo
 echo "✅ Scan completed."
