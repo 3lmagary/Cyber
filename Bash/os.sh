@@ -11,3 +11,5 @@ elif [[ "$os" == CYGWIN* || "$os" == MINGW* ]]; then
 else
     echo "operating system Felid: $os"
 fi
+
+read -r -p 'enter space for close' close 
