@@ -26,7 +26,6 @@ no_remote=0
 echo -e "${BLUE}🔍 Scanning all Git repositories under:${RESET} ${CYAN}$BASE_DIR${RESET}"
 echo "------------------------------------------------------------"
 
-# Use find efficiently (prunes .git subdirs)
 while IFS= read -r gitdir; do
     repo=$(dirname "$gitdir")
     cd "$repo" || continue
@@ -35,18 +34,19 @@ while IFS= read -r gitdir; do
     repo_name=$(basename "$repo")
     branch=$(git symbolic-ref --short HEAD 2>/dev/null)
 
-    # 1️⃣ Check local changes
-    if ! git diff --quiet || ! git diff --cached --quiet; then
+    # 🔹 Check for local/untracked changes
+    status=$(git status --porcelain 2>/dev/null)
+    if [ -n "$status" ]; then
         ((modified++))
         echo -e "${YELLOW}📁 $repo_name${RESET} [${branch}]"
-        echo -e "   ${YELLOW}🔸 Local changes not committed${RESET}"
+        echo -e "   ${YELLOW}🔸 Local changes or untracked files${RESET}"
         echo -e "   ${BLUE}📂 Path:${RESET} $repo"
-        git status --short
+        echo "$status"
         echo "------------------------------------------------------------"
         continue
     fi
 
-    # 2️⃣ Check if repo has a remote
+    # 🔹 Check for remote tracking
     remote_branch=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null)
     if [ -z "$remote_branch" ]; then
         ((no_remote++))
@@ -57,7 +57,7 @@ while IFS= read -r gitdir; do
         continue
     fi
 
-    # 3️⃣ Compare local vs remote
+    # 🔹 Compare with remote
     git fetch --quiet 2>/dev/null
     local_commit=$(git rev-parse @ 2>/dev/null)
     remote_commit=$(git rev-parse @{u} 2>/dev/null)
@@ -89,7 +89,7 @@ done < <(find "$BASE_DIR" -type d -name ".git" -prune 2>/dev/null)
 echo
 echo -e "${BLUE}==================== Scan Summary ====================${RESET}"
 printf "📦 Total repositories scanned: ${CYAN}%d${RESET}\n" "$count"
-printf "📝 Repositories with local changes: ${YELLOW}%d${RESET}\n" "$modified"
+printf "📝 Repositories with local/untracked changes: ${YELLOW}%d${RESET}\n" "$modified"
 printf "🔄 Repositories ahead/behind remote: ${RED}%d${RESET}\n" "$out_of_sync"
 printf "🟢 Clean and synced repositories: ${GREEN}%d${RESET}\n" "$clean"
 printf "🟡 No remote tracking branch: ${CYAN}%d${RESET}\n" "$no_remote"
